@@ -1,3 +1,21 @@
+if(Meteor.isCordova) {
+    Meteor.startup(function () {
+      debug = BackgroundLocation.config.debug;
+        BackgroundLocation.getPlugin();
+        if(!BackgroundLocation.options.fetchLocationOnStart){
+          if (debug) console.log('fetchlocationonstart is set to false');
+        } else {
+          console.log('foreground fetch location on start true');
+            navigator.geolocation.getCurrentPosition(function (location) {
+            if (debug)  console.log('location is' + location.longitude);
+            }, function (err) {
+              if(err) {  if (debug) console.log("location error" + err.message);
+              }
+            });
+        }
+    });
+}
+
 var _options = {
     fetchLocationOnStart : true
 };
@@ -11,7 +29,7 @@ BackgroundLocation = {
     config : {
         desiredAccuracy: 1,
         distanceFilter: 1,
-        debug: false,
+        debug: true,
         interval: 1000,
         //Android Only
         notificationTitle: 'BG Plugin',
@@ -19,17 +37,17 @@ BackgroundLocation = {
         fastestInterval: 5000,
         useActivityDetection: false
     },
-    getPlugin: function() {
+    getPlugin() {
         this.plugin = window.plugins.backgroundLocationServices;
     },
-    havePlugin : function() {
+    havePlugin () {
         if(!this.plugin) {
             throw new Meteor.Error(this.tag, 'Could not find the background location plugin, please run BackgroundLocation.getPlugin');
             return false;
         }
         return true;
     },
-    configure: function(config) {
+    configure(config) {
         if(!this.havePlugin()) return;
 
         if(_.isObject(config)) {
@@ -39,18 +57,18 @@ BackgroundLocation = {
             throw new Meteor.Error(this.tag, 'Config parameter must be a object')
         }
     },
-    registerForLocationUpdates: function(success, failure){
+    registerForLocationUpdates(success, failure){
         if(!this.havePlugin()) return;
 
         this.hasLocationCallback = true;
         this.plugin.registerForLocationUpdates(success, failure);
     },
-    registerForActivityUpdates: function(success, failure){
+    registerForActivityUpdates(success, failure){
         if(!this.havePlugin()) return;
 
         this.plugin.registerForActivityUpdates(success, failure);
     },
-    start: function() {
+    start() {
         if(!this.havePlugin()) return;
 
         if(!this.hasLocationCallback) {
@@ -60,21 +78,9 @@ BackgroundLocation = {
         this.plugin.start();
 
     },
-    stop: function() {
+    stop() {
         if(!this.havePlugin()) return;
 
         this.plugin.stop();
     }
 };
-
-if(Meteor.isCordova) {
-    Meteor.startup(function () {
-        BackgroundLocation.getPlugin();
-
-        if(BackgroundLocation.options.fetchLocationOnStart) {
-            navigator.geolocation.getCurrentPosition(function (location) {
-            }, function (err) {
-            });
-        }
-    });
-}
